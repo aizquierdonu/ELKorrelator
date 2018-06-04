@@ -1,0 +1,95 @@
+# En este fichero se definiran las reglas de correlacion
+#
+#
+R001_NAME:Posible equipo infectado
+R001_DESCRIPTION:Descarga de fichero malicioso y deteccion IDS
+R001_LEVEL:HIGH
+R001_CONTEXTO:[srcip]
+#N0, se identifica la descarga de un fichero malicioso
+R001_N0_C0:YES [rule_description]=="Detected_malicious_file_HASH"
+R001_N0_C1:NOT [regla]=="R001"
+#N1, se identifica que el mismo equipo que se descargo un fichero malicioso genera alertas snort
+R001_N1_C0:YES [syslog_programname]=="snort"
+R001_N1_C1:YES [srcip]==[0___srcip]
+R001_N1_SL:1
+R001_N1_SQ:6
+R001_N1_Tmin:-1
+R001_N1_Tmax:10
+R001_N1_Rnot:0
+R001_N1_RyOK:1
+R001_N1_Event:0
+#
+#
+R002_NAME:Escaneo NESSUS reincidente
+R002_DESCRIPTION:Ip realiza un escaneo de vulnerabilidades NESSUS y se detecta que no es la primera vez que lo hace esta semana
+R002_LEVEL:HIGH
+R002_CONTEXTO:[srcip]
+#N0, se identifica un ataque con la herramienta NESSUS
+R002_N0_C0:YES [rule_description]=~"NESSUS"
+R002_N0_C1:YES [syslog_programname]=="snort"
+R002_N0_C2:NOT [regla]=="R002"
+#N1, se identifica que en el pasado ya se habian detectado ataques NESUS con la misma herramienta
+R002_N1_C0:YES [syslog_programname]=="snort"
+R002_N1_C1:YES [rule_description]=~"NESSUS"
+R002_N1_C2:YES [srcip]==[0___srcip]
+R002_N1_SL:10
+R002_N1_SQ:60
+R002_N1_Tmin:-604800
+R002_N1_Tmax:-60
+R002_N1_Rnot:0
+R002_N1_RyOK:1
+R002_N1_Event:0
+#
+#
+R003_NAME:Amenaza NO bloqueada
+R003_DESCRIPTION:Se detecta un ataque SQL Inyection en IDS pero no se bloquea en WAF
+R003_LEVEL:HIGH
+R003_CONTEXTO:[srcip]
+#N0, se identifica un ataque SQL Injection
+R003_N0_C0:YES [rule_description]=~"SQL Injection"
+R003_N0_C1:YES [syslog_programname]=="snort"
+R003_N0_C2:NOT [regla]=="R003"
+#N1, se identifica que la IP que realizo el ataque no aparece en los eventos del WAF
+R003_N1_C0:YES [syslog_programname]=="waf"
+R003_N1_C1:YES [srcip]==[0___srcip]
+R003_N1_SL:1
+R003_N1_SQ:60
+R003_N1_Tmin:-60
+R003_N1_Tmax:+60
+R003_N1_Rnot:1
+R003_N1_RyOK:1
+R003_N1_Event:0
+#
+#
+R004_NAME:Robo de cuenta FTP y subida de fichero
+R004_DESCRIPTION:Se detecta la subida de un fichero desde una cuenta robada
+R004_LEVEL:CRITICAL
+R004_CONTEXTO:[srcip]
+#N0, se identifica el login correcto, de un usuario que no es public
+R004_N0_C0:YES [action]=="Logon"
+R004_N0_C1:YES [resultaction]=="ok"
+R004_N0_C2:NOT [user]=="public"
+R004_N0_C3:NOT [regla]=="R004"
+#N1, se identifica 5 login fallidos de la misma ip
+R004_N1_C0:YES [action]=="Logon"
+R004_N1_C1:YES [resultaction]=="fail"
+R004_N1_C2:YES [srcip]==[0___srcip]
+R004_N1_SL:10
+R004_N1_SQ:5
+R004_N1_Tmin:-360
+R004_N1_Tmax:+5
+R004_N1_Rnot:0
+R004_N1_RyOK:5
+R004_N1_Event:1
+#N2, se identifica la subida de un fichero desde la cuenta robada
+R004_N2_C0:YES [action]=="Upload"
+R004_N2_C1:YES [user]==[0___user]
+R004_N2_SL:1
+R004_N2_SQ:5
+R004_N2_Tmin:-5
+R004_N2_Tmax:+60
+R004_N2_Rnot:0
+R004_N2_RyOK:1
+R004_N2_Event:0
+#
+#
